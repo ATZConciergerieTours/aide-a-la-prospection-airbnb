@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cockpit Prospection — Conciergerie</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap');
+
+:root {
+  --bg: #0e0f13;
+  --surface: #16181f;
+  --surface2: #1e2029;
+  --border: #2a2d38;
+  --gold: #d4a853;
+  --gold-dim: #3d2f10;
+  --green: #3ecf8e;
+  --green-dim: #0d2e20;
+  --red: #f06060;
+  --red-dim: #2e0f0f;
+  --blue: #5b9cf6;
+  --blue-dim: #16263f;
+  --purple: #b88af0;
+  --purple-dim: #271f3d;
+  --text: #e8e6e0;
+  --muted: #6b6f7e;
+  --muted2: #3a3d4a;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding: 16px;
+  font-size: 13px;
+}
+
+/* MODE SWITCH */
+.mode-switch-wrap {
+  max-width: 1100px;
+  margin: 0 auto 12px;
+}
+.mode-switch {
+  display: flex;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 5px;
+  gap: 5px;
+}
+.mode-btn {
+  flex: 1;
+  padding: 14px 16px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s;
+}
+.mode-btn .mode-icon { font-size: 18px; margin-bottom: 4px; display: block; }
+.mode-btn .mode-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+.mode-btn .mode-sub { font-size: 10.5px; color: var(--muted); line-height: 1.3; }
+.mode-btn.active.m1 { background: var(--blue-dim); border: 1px solid var(--blue); }
+.mode-btn.active.m1 .mode-title { color: var(--blue); }
+.mode-btn.active.m2 { background: var(--purple-dim); border: 1px solid var(--purple); }
+.mode-btn.active.m2 .mode-title { color: var(--purple); }
+.mode-btn:not(.active) { opacity: 0.55; }
+.mode-btn:not(.active):hover { opacity: 0.85; }
+
+/* LAYOUT GRID */
+.cockpit {
+  display: grid;
+  grid-template-columns: 220px 1fr 200px;
+  grid-template-rows: auto auto;
+  gap: 10px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* TOPBAR */
+.topbar {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px 10px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.topbar-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.topbar-meta {
+  font-size: 11px;
+  color: var(--muted);
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+.live-dot {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--green);
+}
+.live-dot::before {
+  content: '';
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: pulse 1.8s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.8); }
+}
+.timer-display {
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--green);
+  letter-spacing: 0.1em;
+  cursor: pointer;
+}
+.bottom-goal {
+  font-family: 'Syne', sans-serif;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+/* PANEL BASE */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.panel-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* PHASES COL */
+.phase-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+.phase-item:hover { background: var(--surface2); }
+.phase-item.active { border-color: var(--accent-color); background: var(--accent-dim); }
+.phase-item.done .phase-num { background: var(--green); color: #000; }
+.phase-item.done .phase-title { color: var(--muted); text-decoration: line-through; }
+
+.phase-num {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--muted2);
+  color: var(--muted);
+  font-family: 'Syne', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+.phase-item.active .phase-num { background: var(--accent-color); color: #000; }
+.phase-title { font-size: 12.5px; font-weight: 600; color: var(--text); line-height: 1.3; }
+.phase-sub { font-size: 10.5px; color: var(--muted); margin-top: 2px; line-height: 1.4; }
+.phase-connector { width: 1px; height: 8px; background: var(--border); margin-left: 21px; }
+
+/* MAIN COL */
+.main-col { display: flex; flex-direction: column; gap: 10px; }
+
+.script-display {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 18px;
+}
+.script-phase-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--accent-color);
+  margin-bottom: 4px;
+}
+.script-phase-goal {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.speech-bubble {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent-color);
+  border-radius: 0 8px 8px 0;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text);
+  font-style: italic;
+}
+.speech-tip {
+  font-size: 11px;
+  color: var(--accent-color);
+  font-style: normal;
+  margin-top: 6px;
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+}
+.speech-tip::before { content: '→'; flex-shrink: 0; }
+
+.nav-buttons { display: flex; gap: 8px; margin-top: 4px; }
+.btn {
+  padding: 9px 18px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s;
+  letter-spacing: 0.03em;
+}
+.btn-prev { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+.btn-prev:hover { color: var(--text); border-color: var(--muted); }
+.btn-next { background: var(--accent-color); color: #000; font-weight: 700; flex: 1; }
+
+.quick-qs { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+.quick-qs .panel-label { border: none; padding-bottom: 6px; }
+.q-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.q-chip {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-size: 11.5px;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  line-height: 1.35;
+}
+.q-chip:hover { border-color: var(--accent-color); color: var(--text); }
+.q-chip.used { border-color: var(--green-dim); color: var(--muted); background: var(--green-dim); }
+
+/* RIGHT COL */
+.right-col { display: flex; flex-direction: column; gap: 10px; }
+
+.info-list { display: flex; flex-direction: column; gap: 5px; }
+.info-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 8px; border-radius: 6px; cursor: pointer;
+  transition: background 0.15s; border: 1px solid transparent;
+}
+.info-item:hover { background: var(--surface2); }
+.info-item.checked { opacity: 0.5; }
+.info-item.checked .info-box { background: var(--green); border-color: var(--green); }
+.info-item.checked .info-box::after { content: '✓'; color: #000; font-size: 9px; font-weight: 700; }
+.info-box { width: 14px; height: 14px; border: 1.5px solid var(--border); border-radius: 3px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.info-text { font-size: 11.5px; color: var(--text); line-height: 1.3; }
+
+.obj-list { display: flex; flex-direction: column; gap: 5px; }
+.obj-item {
+  padding: 8px 10px; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--border); background: var(--surface2);
+  font-size: 11.5px; color: var(--muted); transition: all 0.15s;
+}
+.obj-item:hover { border-color: var(--red); color: var(--text); }
+.obj-item.open { border-color: var(--red); background: var(--red-dim); color: var(--text); }
+.obj-response {
+  display: none; font-size: 11px; color: var(--text); margin-top: 7px;
+  line-height: 1.6; border-top: 1px solid var(--border); padding-top: 7px; font-style: italic;
+}
+.obj-item.open .obj-response { display: block; }
+
+/* BOTTOMBAR */
+.bottombar { grid-column: 1 / -1; display: flex; align-items: center; gap: 16px; padding: 10px 4px 0; border-top: 1px solid var(--border); }
+.progress-track { flex: 1; height: 4px; background: var(--muted2); border-radius: 2px; }
+.progress-fill { height: 100%; background: var(--green); border-radius: 2px; transition: width 0.3s; }
+.bottom-label { font-size: 11px; color: var(--muted); }
+
+/* MOBILE */
+@media (max-width: 750px) {
+  body { padding: 10px; }
+  .cockpit { grid-template-columns: 1fr; }
+  .mode-switch { flex-direction: column; }
+  .q-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="mode-switch-wrap">
+  <div class="mode-switch">
+    <button class="mode-btn m1 active" id="btnMode1" onclick="setMode(1)">
+      <span class="mode-icon">🔧</span>
+      <span class="mode-title">Proprio autonome (LCD)</span>
+      <span class="mode-sub">Gère déjà son Airbnb seul — il faut le décharger</span>
+    </button>
+    <button class="mode-btn m2" id="btnMode2" onclick="setMode(2)">
+      <span class="mode-icon">🔄</span>
+      <span class="mode-title">Proprio LLD → LCD</span>
+      <span class="mode-sub">Loue à l'année — il faut ouvrir le sujet LCD</span>
+    </button>
+  </div>
+</div>
+
+<div class="cockpit">
+
+  <div class="topbar">
+    <div class="topbar-title" id="topTitle">🔧 Prospection — Proprio LCD autonome</div>
+    <div class="topbar-meta">
+      <span class="live-dot">EN APPEL</span>
+      <span class="timer-display" id="timer" onclick="toggleTimer()">00:00</span>
+    </div>
+    <div class="bottom-goal" id="bottomGoal">🎯 Objectif : RDV physique</div>
+  </div>
+
+  <div class="panel phases-col">
+    <div class="panel-label">Déroulé de l'appel</div>
+    <div id="phaseList"></div>
+  </div>
+
+  <div class="main-col">
+    <div class="script-display" id="scriptDisplay"></div>
+    <div class="quick-qs">
+      <div class="panel-label">Questions clés à poser</div>
+      <div class="q-grid" id="qGrid"></div>
+    </div>
+  </div>
+
+  <div class="right-col">
+    <div class="panel">
+      <div class="panel-label" id="infoLabel">✅ Infos à collecter</div>
+      <div class="info-list" id="infoList"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-label">⚡ Objections fréquentes</div>
+      <div class="obj-list" id="objList"></div>
+    </div>
+  </div>
+
+  <div class="bottombar">
+    <span class="bottom-label">Progression</span>
+    <div class="progress-track"><div class="progress-fill" id="pFill" style="width:20%"></div></div>
+    <span class="bottom-label" id="pLabel">Phase 1 / 5</span>
+  </div>
+
+</div>
+
+<script>
+/* ========== DATA MODE 1 : PROPRIO AUTONOME LCD ========== */
+const mode1 = {
+  accent: '#5b9cf6',
+  accentDim: '#16263f',
+  topTitle: '🔧 Prospection — Proprio LCD autonome',
+  bottomGoal: '🎯 Objectif : RDV physique pour audit + proposition',
+  infoLabel: '✅ Infos à qualifier',
+  phases: [
+    {
+      title: "Pattern Interrupt — Capter l'attention",
+      goal: "Casser le réflexe de rejet automatique avant même de te présenter en détail",
+      speeches: [
+        {
+          text: "« Bonjour [Prénom] ! Je vais être direct avec vous : si je vous dis que c'est un appel de prospection, vous raccrochez tout de suite, ou vous m'accordez 90 secondes pour vous expliquer pourquoi je vous appelle vous, précisément ? »",
+          tip: "L'humour + l'honnêteté cassent la garde automatique. Le ton compte plus que les mots : léger, souriant, jamais robotique."
+        },
+        {
+          text: "« Je vous appelle pas pour vous vendre quoi que ce soit aujourd'hui — promis. Je veux juste 2 minutes pour comprendre votre situation. Si ça ne vous intéresse pas après ça, je vous laisse tranquille, aucun problème. »",
+          tip: "Variante plus posée si le ton humoristique ne te ressemble pas. Le mot clé : 'aucun problème' désamorce la peur d'être piégé."
+        },
+        {
+          text: "« Je sais que vous devez recevoir pas mal d'appels comme celui-ci, donc je vous donne 15 secondes pour juger si ça vaut le coup de m'écouter : je gère des locations Airbnb dans votre secteur et j'ai remarqué votre annonce. Je peux vous expliquer pourquoi je vous appelle ? »",
+          tip: "Reconnaître qu'il reçoit beaucoup de démarchage = tu te différencies en l'admettant toi-même. Très efficace avec un public déjà sollicité."
+        }
+      ],
+      questions: [
+        "Choisis UNE accroche, ne les enchaîne pas",
+        "Adapte ton ton à sa première réaction",
+        "S'il rit ou souffle un 'ok' → tu as gagné l'ouverture",
+        "S'il reste froid → reste bref, va à l'essentiel vite"
+      ]
+    },
+    {
+      title: "Accroche — Légitimer l'appel",
+      goal: "Désamorcer la méfiance 'encore un démarcheur' en 10 secondes",
+      speeches: [
+        {
+          text: "« Bonjour [Prénom], je suis [Ton prénom] de [Ta conciergerie], on s'occupe de gestion de locations courte durée dans le secteur. Je vous appelle 2 minutes, ce n'est pas pour vous vendre quoi que ce soit tout de suite — je voulais juste comprendre comment vous gérez votre bien aujourd'hui. Vous avez 2 minutes ? »",
+          tip: "Sois transparent dès la première phrase : il sait déjà que tu es une conciergerie. Ne le cache jamais."
+        },
+        {
+          text: "« J'ai vu votre annonce sur Airbnb pour [nom du bien / quartier] — ça a l'air d'un super logement. Depuis combien de temps vous le gérez vous-même ? »",
+          tip: "Compliment sincère + question factuelle. Ça montre que tu as fait tes devoirs."
+        }
+      ],
+      questions: [
+        "Depuis quand gérez-vous en LCD ?",
+        "Vous avez vu mon annonce où précisément ?",
+        "C'est votre seul bien en location ?",
+        "Vous avez 2 min là tout de suite ?"
+      ]
+    },
+    {
+      title: "Découverte — La douleur cachée",
+      goal: "Trouver SA frustration réelle (temps, stress, optimisation, vacances)",
+      speeches: [
+        {
+          text: "« Concrètement, qu'est-ce qui vous prend le plus de temps ou d'énergie dans la gestion au quotidien ? Les messages voyageurs ? Le ménage à coordonner ? Les urgences ? »",
+          tip: "Laisse-le vider son sac. C'est souvent là que tu trouves ton angle d'attaque pour le RDV."
+        },
+        {
+          text: "« Et niveau taux d'occupation et prix, vous êtes satisfait de ce que ça vous rapporte, ou vous pensez qu'il y a de la marge ? »",
+          tip: "Beaucoup de proprios autonomes sous-optimisent leur pricing sans le savoir. C'est ton meilleur argument."
+        },
+        {
+          text: "« Vous partez en vacances, vous gérez quand même les messages et les urgences à distance ? »",
+          tip: "Question qui touche directement à la liberté perdue — souvent LE déclencheur émotionnel."
+        }
+      ],
+      questions: [
+        "Qu'est-ce qui vous prend le plus de temps ?",
+        "Vous êtes satisfait du taux d'occupation ?",
+        "Vous gérez les urgences même en vacances ?",
+        "Vous avez déjà eu de mauvaises expériences voyageurs ?"
+      ]
+    },
+    {
+      title: "Qualification du bien",
+      goal: "Comprendre le potentiel réel et le delta de performance possible",
+      speeches: [
+        {
+          text: "« Pour me faire une idée, vous tournez à combien de nuitées par mois en moyenne ? Et niveau prix, vous êtes plutôt autour de combien la nuit ? »",
+          tip: "Compare mentalement avec les biens similaires que tu gères déjà dans le secteur — c'est ta donnée de négociation."
+        },
+        {
+          text: "« Vous utilisez un outil de pricing dynamique, ou vous ajustez les prix manuellement ? »",
+          tip: "S'il ajuste à la main, c'est presque toujours un manque à gagner que tu peux chiffrer au RDV."
+        }
+      ],
+      questions: [
+        "Combien de nuitées par mois en moyenne ?",
+        "Quel prix moyen par nuit ?",
+        "Pricing manuel ou automatique ?",
+        "Note moyenne sur Airbnb actuellement ?"
+      ]
+    },
+    {
+      title: "Projection — Montrer le delta",
+      goal: "Faire visualiser le gain (temps libéré + revenu optimisé) sans donner tous les chiffres",
+      speeches: [
+        {
+          text: "« Sur des biens similaires au vôtre dans le secteur, avec une optimisation du pricing et du calendrier, on observe en général [X]% de revenus en plus. Mais le vrai changement, c'est que vous n'avez plus à y penser. »",
+          tip: "Donne une fourchette crédible, pas un chiffre magique. Reste honnête."
+        },
+        {
+          text: "« Ce que je vous propose, c'est qu'on se voie sur place 30 minutes. Je vous fais un vrai audit de votre annonce et de votre pricing actuel, gratuit, sans engagement — et on regarde ensemble si ça vaut le coup de déléguer. »",
+          tip: "Le mot 'audit gratuit' désamorce la pression commerciale et valorise le RDV comme un service, pas une vente."
+        }
+      ],
+      questions: [
+        "Vous seriez ouvert à un audit gratuit de votre annonce ?",
+        "Qu'est-ce qui vous ferait dire oui à une conciergerie ?",
+        "Vous avez un frein particulier à déléguer ?",
+        "Combien de temps vous y consacrez par semaine ?"
+      ]
+    },
+    {
+      title: "Closing — RDV physique",
+      goal: "Fixer la date sans pression, cadrée comme un audit gratuit",
+      speeches: [
+        {
+          text: "« Je passe dans le secteur cette semaine — vous êtes dispo plutôt en début ou en fin de semaine pour qu'on regarde ça ensemble sur place ? Aucun engagement, c'est juste un audit. »",
+          tip: "Alternative de timing. 'Audit' et 'aucun engagement' rassurent un proprio déjà autonome et parfois méfiant."
+        },
+        {
+          text: "« Parfait, [jour] à [heure] chez vous. Je vous envoie un SMS de confirmation. Et n'hésitez pas à avoir vos derniers chiffres sous la main, ça nous fera gagner du temps. »",
+          tip: "Lui demander ses chiffres en amont = il s'investit déjà mentalement dans le process."
+        }
+      ],
+      questions: [
+        "Début ou fin de semaine pour vous ?",
+        "Plutôt matin ou soir (selon son taf) ?",
+        "Adresse exacte du bien ?",
+        "Vous pouvez préparer vos chiffres d'occupation ?"
+      ]
+    }
+  ],
+  info: [
+    "Ancienneté en LCD", "Nb de biens gérés", "Taux d'occupation actuel",
+    "Prix moyen / nuit", "Pricing manuel ou auto ?", "Note Airbnb actuelle",
+    "Plateforme(s) utilisée(s)", "Frein principal à déléguer"
+  ],
+  objections: [
+    { q: "« Je gère très bien tout seul »", r: "« Je n'en doute pas, votre annonce le montre. La question c'est plutôt : qu'est-ce que ça vous coûte en temps, et qu'est-ce que vous pourriez en faire si ce temps était libéré ? »" },
+    { q: "« Votre commission va manger ma marge »", r: "« C'est légitime de se poser la question. C'est justement pour ça qu'on fait l'audit gratuitement — on compare net actuel vs net avec nous, vous voyez par vous-même. »" },
+    { q: "« J'ai déjà essayé une conciergerie, mauvaise expérience »", r: "« Je comprends la méfiance. Qu'est-ce qui n'a pas fonctionné ? » → adapte ta proposition pour répondre précisément à ce point." },
+    { q: "« Je n'ai pas le temps pour un RDV »", r: "« 30 minutes chez vous, je m'adapte à votre planning même tôt le matin ou en soirée. C'est un audit gratuit, pas un argumentaire de vente. »" }
+  ]
+};
+
+/* ========== DATA MODE 2 : PROPRIO LLD A CONVERTIR ========== */
+const mode2 = {
+  accent: '#b88af0',
+  accentDim: '#271f3d',
+  topTitle: '🔄 Prospection — Proprio LLD à convertir',
+  bottomGoal: '🎯 Objectif : RDV physique pour étude de faisabilité',
+  infoLabel: '✅ Infos à qualifier',
+  phases: [
+    {
+      title: "Pattern Interrupt — Capter l'attention",
+      goal: "Casser le réflexe de rejet automatique avant même de te présenter en détail",
+      speeches: [
+        {
+          text: "« Bonjour [Prénom] ! Je vous arrête tout de suite avant que vous ne pensiez 'encore un démarcheur' — vous me donnez 60 secondes pour vous expliquer pourquoi je vous appelle, et si ça ne vous parle pas, je raccroche moi-même, promis ? »",
+          tip: "Lui donner le contrôle ('je raccroche moi-même') désamorce sa méfiance. Ton léger, jamais scripté à l'oreille."
+        },
+        {
+          text: "« Je sais que vous n'avez rien demandé, donc je vais droit au but : vous louez un bien à l'année, et je voulais juste savoir si vous aviez déjà entendu parler de ce que ça pourrait rapporter en courte durée. 2 minutes, ça vous va ? »",
+          tip: "Pas de blabla commercial. Tu vas directement au sujet qui l'intéresse potentiellement : l'argent."
+        },
+        {
+          text: "« Promis, je ne vais pas vous demander de tout changer aujourd'hui. Juste vous poser une question qui peut faire une vraie différence sur votre bien : vous savez combien il pourrait rapporter en location courte durée par rapport à maintenant ? »",
+          tip: "Tu utilises la curiosité chiffrée comme hook — la plupart des proprios LLD n'ont jamais fait le calcul."
+        }
+      ],
+      questions: [
+        "Choisis UNE accroche, ne les enchaîne pas",
+        "Adapte ton ton à sa première réaction",
+        "S'il pose une question en retour → il est intéressé",
+        "S'il dit 'pas le temps' → propose un recall, ne forces pas"
+      ]
+    },
+    {
+      title: "Accroche — Ouvrir la porte",
+      goal: "Introduire le sujet LCD sans braquer un proprio satisfait de sa LLD",
+      speeches: [
+        {
+          text: "« Bonjour [Prénom], je suis [Ton prénom] de [Ta conciergerie], on accompagne des propriétaires dans la location courte durée dans le secteur. Je vous appelle car j'ai vu que vous aviez un bien en location à [adresse / quartier] — je me demandais si vous aviez déjà entendu parler de la location courte durée comme alternative ? »",
+          tip: "Ne suppose jamais qu'il veut changer. Tu ouvres juste une porte, sans pression."
+        },
+        {
+          text: "« Vous avez 2 minutes ? Je ne vous appelle pas pour vous pousser à changer quoi que ce soit, juste pour voir si ça pourrait avoir du sens pour vous. »",
+          tip: "Désamorce tout de suite l'idée qu'il doit décider quelque chose maintenant."
+        }
+      ],
+      questions: [
+        "Vous connaissez le concept de LCD ?",
+        "Vous avez 2 minutes là maintenant ?",
+        "Le bien est loué actuellement ?",
+        "Comment avez-vous trouvé votre locataire actuel ?"
+      ]
+    },
+    {
+      title: "Découverte — Sa situation LLD",
+      goal: "Comprendre sa satisfaction actuelle et ses points de friction avec la LLD",
+      speeches: [
+        {
+          text: "« Aujourd'hui votre bien est loué à l'année, c'est ça ? Vous en êtes satisfait, ou il y a des choses qui vous embêtent — loyers impayés, dégradations, vacance locative, plafonnement des loyers... ? »",
+          tip: "Cherche la faille. S'il est 100% satisfait, le combat est plus dur — mais il existe toujours un point de friction."
+        },
+        {
+          text: "« Et niveau rentabilité, votre loyer couvre bien vos charges et votre crédit, ou vous sentez qu'il y a de la marge perdue ? »",
+          tip: "C'est LA question clé. La LCD rapporte en général 1.5x à 2.5x plus qu'une LLD classique selon la zone."
+        }
+      ],
+      questions: [
+        "Vous êtes satisfait du loyer actuel ?",
+        "Déjà eu des soucis avec un locataire ?",
+        "Le bien est-il actuellement vide ou occupé ?",
+        "Pourquoi avoir choisi la LLD à l'origine ?"
+      ]
+    },
+    {
+      title: "Qualification du bien & zone",
+      goal: "Vérifier la faisabilité réelle (zone, règlement, fiscalité) avant de vendre du rêve",
+      speeches: [
+        {
+          text: "« Le bien est où exactement ? Et c'est un appartement ou une maison, combien de pièces ? »",
+          tip: "La localisation détermine tout : zone tendue, zone touristique, demande LCD réelle ou non."
+        },
+        {
+          text: "« Vous savez si votre commune a des règles spécifiques sur la location courte durée — déclaration en mairie, numéro d'enregistrement ? »",
+          tip: "Certaines zones (Paris, grandes villes) sont très réglementées. Vérifie avant de t'emballer — ta crédibilité en dépend."
+        },
+        {
+          text: "« Et le bien est libre quand ? Le locataire actuel part bientôt ou c'est un bail en cours ? »",
+          tip: "Un bail en cours signifie un délai. Ne perds pas de vue le calendrier réel de disponibilité."
+        }
+      ],
+      questions: [
+        "Ville / quartier exact du bien ?",
+        "Zone réglementée pour la LCD ?",
+        "Bail en cours ou bien libre bientôt ?",
+        "Le bien est-il meublé ou vide actuellement ?"
+      ]
+    },
+    {
+      title: "Projection — Le déclic chiffré",
+      goal: "Faire le parallèle concret LLD vs LCD pour créer l'envie de creuser",
+      speeches: [
+        {
+          text: "« Pour vous donner un ordre d'idée : sur des biens comparables au vôtre dans le secteur, on observe souvent un revenu net supérieur en LCD par rapport à la LLD, même en comptant la gestion, le ménage et la vacance entre les séjours. »",
+          tip: "Reste prudent et général au téléphone. La comparaison précise = au RDV, avec ses vrais chiffres LLD en main."
+        },
+        {
+          text: "« Le vrai sujet c'est : est-ce que ça vaut le coup pour VOTRE bien à VOTRE adresse. C'est exactement ce qu'on peut regarder ensemble — je viens sur place, je vous fais une étude de faisabilité gratuite, sans engagement. »",
+          tip: "'Étude de faisabilité gratuite' positionne le RDV comme un service neutre, pas une tentative de vente."
+        }
+      ],
+      questions: [
+        "Quel est le loyer actuel net par mois ?",
+        "Vous seriez ouvert à une étude comparative gratuite ?",
+        "Le bien est meublable facilement ?",
+        "Vous avez un délai pour décider (fin de bail...) ?"
+      ]
+    },
+    {
+      title: "Closing — RDV physique",
+      goal: "Fixer une date pour l'étude de faisabilité sur place",
+      speeches: [
+        {
+          text: "« Je vous propose qu'on se voie sur place pour que je regarde le bien et qu'on compare concrètement loyer actuel vs potentiel LCD. Vous êtes plutôt disponible en début ou en fin de semaine ? »",
+          tip: "Alternative de timing, jamais 'voulez-vous qu'on se voie' — il a l'esprit encore en mode LLD, il faut un cadre clair et factuel."
+        },
+        {
+          text: "« Parfait, [jour] à [heure]. Si possible, ayez votre dernier avis d'imposition foncière ou votre bail sous la main, ça m'aidera à affiner les chiffres en direct. »",
+          tip: "Lui faire préparer des documents = il passe mentalement du 'peut-être' au 'on étudie sérieusement'."
+        }
+      ],
+      questions: [
+        "Début ou fin de semaine pour vous ?",
+        "Le conjoint / co-propriétaire doit être présent ?",
+        "Adresse exacte du bien ?",
+        "Vous pouvez préparer le bail / charges actuelles ?"
+      ]
+    }
+  ],
+  info: [
+    "Loyer LLD actuel net", "Charges & taxe foncière", "Bail en cours / date de fin",
+    "Ville / quartier précis", "Zone réglementée LCD ?", "Meublé ou vide",
+    "Co-décideur (conjoint) ?", "Motivation au changement"
+  ],
+  objections: [
+    { q: "« Mon locataire est sérieux, pourquoi changer ? »", r: "« Tant mieux, c'est précieux. La question n'est pas de virer un bon locataire, mais de regarder ce qui se passe à la fin du bail — ou si vous avez un autre bien à l'avenir. »" },
+    { q: "« La LCD c'est trop de contraintes / réglementé »", r: "« C'est vrai que ça demande un cadre. C'est justement ce qu'on vérifie ensemble lors de l'étude — la faisabilité réelle dans votre zone, sans mauvaise surprise. »" },
+    { q: "« J'ai peur de la vacance entre les locations »", r: "« C'est une crainte légitime et fréquente. On vous montre les taux d'occupation réels qu'on obtient sur des biens similaires — souvent la peur est plus grande que la réalité. »" },
+    { q: "« Je n'ai pas le budget pour meubler »", r: "« On peut en parler lors du RDV — il y a des solutions progressives, et le retour sur investissement du mobilier est souvent rapide en LCD. »" }
+  ]
+};
+
+let activeMode = mode1;
+let current = 0;
+let timerInterval = null;
+let timerRunning = false;
+let seconds = 0;
+
+function setMode(n) {
+  activeMode = n === 1 ? mode1 : mode2;
+  current = 0;
+  document.getElementById('btnMode1').classList.toggle('active', n === 1);
+  document.getElementById('btnMode2').classList.toggle('active', n === 2);
+  document.documentElement.style.setProperty('--accent-color', activeMode.accent);
+  document.documentElement.style.setProperty('--accent-dim', activeMode.accentDim);
+  document.getElementById('topTitle').textContent = activeMode.topTitle;
+  document.getElementById('bottomGoal').textContent = activeMode.bottomGoal;
+  document.getElementById('infoLabel').textContent = activeMode.infoLabel;
+  renderPhaseList();
+  renderInfo();
+  renderObjections();
+  render();
+}
+
+function renderPhaseList() {
+  const pl = document.getElementById('phaseList');
+  pl.innerHTML = activeMode.phases.map((p, i) => `
+    ${i > 0 ? '<div class="phase-connector"></div>' : ''}
+    <div class="phase-item" onclick="goTo(${i})">
+      <div class="phase-num">${i + 1}</div>
+      <div>
+        <div class="phase-title">${p.title.split('—')[0].trim()}</div>
+        <div class="phase-sub">${p.title.includes('—') ? p.title.split('—')[1].trim() : ''}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderInfo() {
+  const il = document.getElementById('infoList');
+  il.innerHTML = activeMode.info.map(t => `
+    <div class="info-item" onclick="toggleInfo(this)"><div class="info-box"></div><div class="info-text">${t}</div></div>
+  `).join('');
+}
+
+function renderObjections() {
+  const ol = document.getElementById('objList');
+  ol.innerHTML = activeMode.objections.map(o => `
+    <div class="obj-item" onclick="toggleObj(this)">
+      ${o.q}
+      <div class="obj-response">${o.r}</div>
+    </div>
+  `).join('');
+}
+
+function render() {
+  const p = activeMode.phases[current];
+  const sd = document.getElementById('scriptDisplay');
+  sd.innerHTML = `
+    <div class="script-phase-title">${p.title}</div>
+    <div class="script-phase-goal">🎯 ${p.goal}</div>
+    ${p.speeches.map(s => `
+      <div class="speech-bubble">
+        ${s.text}
+        <div class="speech-tip">${s.tip}</div>
+      </div>
+    `).join('')}
+    <div class="nav-buttons">
+      <button class="btn btn-prev" onclick="prev()" ${current === 0 ? 'disabled style="opacity:0.3"' : ''}>← Retour</button>
+      <button class="btn btn-next" onclick="next()">${current === activeMode.phases.length - 1 ? '✅ Appel terminé' : 'Phase suivante →'}</button>
+    </div>
+  `;
+
+  const qg = document.getElementById('qGrid');
+  qg.innerHTML = p.questions.map(q => `<div class="q-chip" onclick="this.classList.toggle('used')">${q}</div>`).join('');
+
+  document.querySelectorAll('.phase-item').forEach((el, i) => {
+    el.classList.remove('active', 'done');
+    if (i < current) el.classList.add('done');
+    if (i === current) el.classList.add('active');
+  });
+
+  const pct = ((current + 1) / activeMode.phases.length) * 100;
+  document.getElementById('pFill').style.width = pct + '%';
+  document.getElementById('pLabel').textContent = `Phase ${current + 1} / ${activeMode.phases.length}`;
+}
+
+function goTo(i) { current = i; render(); }
+function next() { if (current < activeMode.phases.length - 1) { current++; render(); } }
+function prev() { if (current > 0) { current--; render(); } }
+function toggleInfo(el) { el.classList.toggle('checked'); }
+function toggleObj(el) {
+  document.querySelectorAll('.obj-item').forEach(o => { if (o !== el) o.classList.remove('open'); });
+  el.classList.toggle('open');
+}
+
+function toggleTimer() {
+  if (!timerRunning) {
+    timerRunning = true;
+    timerInterval = setInterval(() => {
+      seconds++;
+      const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+      const s = String(seconds % 60).padStart(2, '0');
+      document.getElementById('timer').textContent = `${m}:${s}`;
+      if (seconds > 480) document.getElementById('timer').style.color = 'var(--red)';
+    }, 1000);
+  } else {
+    clearInterval(timerInterval);
+    timerRunning = false;
+    seconds = 0;
+    document.getElementById('timer').textContent = '00:00';
+    document.getElementById('timer').style.color = 'var(--green)';
+  }
+}
+
+// Init
+document.documentElement.style.setProperty('--accent-color', mode1.accent);
+document.documentElement.style.setProperty('--accent-dim', mode1.accentDim);
+renderPhaseList();
+renderInfo();
+renderObjections();
+render();
+</script>
+</body>
+</html>
